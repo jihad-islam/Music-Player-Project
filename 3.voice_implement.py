@@ -1,13 +1,10 @@
-#voice command implement kora hoise but slow
-
-from tkinter import filedialog, PhotoImage, Listbox, Scale, Menu, Button, Label, Frame, Tk, END
+from tkinter import filedialog
+from tkinter import *
 import pygame
 import os
 import random
-import threading
-import time
-import speech_recognition as sr
 from mutagen.mp3 import MP3
+import speech_recognition as sr
 
 class MusicPlayer:
     def __init__(self, root):
@@ -53,7 +50,6 @@ class MusicPlayer:
         self.stop_btn = Button(self.control_frame, image=self.stop_btn_image, borderwidth=0, command=self.stop_music)
         self.shuffle_btn = Button(self.control_frame, image=self.shuffle_btn_image, borderwidth=0, command=self.toggle_shuffle)
         self.repeat_btn = Button(self.control_frame, image=self.repeat_btn_image, borderwidth=0, command=self.toggle_repeat)
-        self.push_to_talk_btn = Button(self.control_frame, text="Push to Talk", command=self.toggle_listening)
 
         self.play_btn.grid(row=0, column=1, padx=7, pady=10)
         self.pause_btn.grid(row=0, column=2, padx=7, pady=10)
@@ -62,9 +58,8 @@ class MusicPlayer:
         self.stop_btn.grid(row=0, column=4, padx=7, pady=10)
         self.shuffle_btn.grid(row=0, column=5, padx=7, pady=10)
         self.repeat_btn.grid(row=0, column=6, padx=7, pady=10)
-        self.push_to_talk_btn.grid(row=0, column=7, padx=7, pady=10)
 
-        self.volume_slider = Scale(self.root, from_=0, to=1, resolution=0.1, orient="horizontal", command=self.set_volume)
+        self.volume_slider = Scale(self.root, from_=0, to=1, resolution=0.1, orient=HORIZONTAL, command=self.set_volume)
         self.volume_slider.set(0.5)
         pygame.mixer.music.set_volume(0.5)
         self.volume_slider.pack()
@@ -75,22 +70,6 @@ class MusicPlayer:
         self.elapsed_time_label.pack()
 
         self.update_elapsed_time()
-
-        # Initialize speech recognition
-        self.recognizer = sr.Recognizer()
-        self.mic = sr.Microphone(device_index=0)
-
-        self.voice_commands = {
-            "play": self.play_music,
-            "pause": self.pause_music,
-            "stop": self.stop_music,
-            "next": self.next_music,
-            "previous": self.prev_music,
-            "shuffle": self.toggle_shuffle,
-            "repeat": self.toggle_repeat
-        }
-
-        self.listening = False
 
     def load_music(self):
         self.directory = filedialog.askdirectory()
@@ -185,35 +164,49 @@ class MusicPlayer:
         else:
             self.repeat_btn.config(image=self.repeat_btn_image)
 
-    def toggle_listening(self):
-        if not self.listening:
-            self.listening = True
-            self.push_to_talk_btn.config(text="Listening...")
-            self.start_voice_command_thread()
-        else:
-            self.listening = False
-            self.push_to_talk_btn.config(text="Push to Talk")
 
-    def start_voice_command_thread(self):
-        voice_thread = threading.Thread(target=self.listen_for_voice_commands)
-        voice_thread.daemon = True
-        voice_thread.start()
+class VoiceControlledMusicPlayer(MusicPlayer):
+    def __init__(self, root):
+        super().__init__(root)
+        self.init_voice_recognition()
 
-    def listen_for_voice_commands(self):
-        while self.listening:
-            with self.mic as source:
-                audio = self.recognizer.listen(source)
-            try:
-                command = self.recognizer.recognize_google(audio).lower()
-                print(f"Recognized command: {command}")  # Debug print statement
-                if command in self.voice_commands:
-                    self.voice_commands[command]()
-                else:
-                    print("Command not recognized")
-            except sr.UnknownValueError:
-                print("Could not understand audio")  # Debug print statement
+        # Add a listen button for voice commands
+        self.listen_btn = Button(self.control_frame, text="Listen", command=self.listen_for_commands)
+        self.listen_btn.grid(row=0, column=7, padx=7, pady=10)
+
+    def init_voice_recognition(self):
+        self.recognizer = sr.Recognizer()
+
+    def listen_for_commands(self):
+        with sr.Microphone() as source:
+            self.recognizer.adjust_for_ambient_noise(source)
+            print("Listening for commands...")
+            audio = self.recognizer.listen(source)
+
+        try:
+            command = self.recognizer.recognize_google(audio).lower()
+            print(f"Command received: {command}")
+
+            if "play" in command:
+                self.play_music()
+            elif "pause" in command:
+                self.pause_music()
+            elif "next" in command:
+                self.next_music()
+            elif "previous" in command:
+                self.prev_music()
+            elif "stop" in command:
+                self.stop_music()
+            else:
+                print("Unknown command")
+
+        except sr.UnknownValueError:
+            print("Sorry, I did not understand that.")
+        except sr.RequestError as e:
+            print(f"Could not request results; {e}")
+
 
 if __name__ == "__main__":
     root = Tk()
-    app = MusicPlayer(root)
+    app = VoiceControlledMusicPlayer(root)
     root.mainloop()
