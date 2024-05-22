@@ -1,19 +1,17 @@
-from tkinter import filedialog # select folder e click korle file select korar jonne popup window ashbe. oi popup window er jonne filedialog import korlam
+from tkinter import filedialog
 from tkinter import *
 import pygame
 import os
 
 root = Tk()
-root.title('Music Player')
-root.geometry("500x300")  # Use "x" instead of "*"
+root.title('Melody')
+root.geometry("500x300")
 
 pygame.mixer.init()
 
-#creating menu bar. menubar hoilo uporer section ta.
 menubar = Menu(root)
 root.config(menu=menubar)
 
-# song loading er jonne variable declare korlam
 songs = []
 current_song =""
 paused = False
@@ -22,16 +20,15 @@ def load_music():
   global current_song
   root.directory = filedialog.askdirectory()
 
-  #ei loop er maddhome ami file search korbo jodi extension ta .mp3 hoy then add korbo
   for song in os.listdir(root.directory):
       name, ext =os.path.splitext(song)
       if ext =='.mp3':
         songs.append(song)
 
-  for song in songs: #listbox e aro song add korlam
+  for song in songs: 
     songlist.insert("end",song)
 
-  songlist.selection_set(0) # ei line er maddhome serial er shurur song ta select korbe
+  songlist.selection_set(0) 
   current_song = songs[songlist.curselection()[0]]
 
 
@@ -74,12 +71,10 @@ def prev_music():
 
 
 
-#organise menu
-organise_menu =Menu(menubar, tearoff=False) # menubar e click korle --- erokom line ashto. oita off korte tearoff = False use korlam
-organise_menu.add_command(label='Select Folder', command=load_music) # load_music command er maddhome jokhon select folder e click korbo oita music select korbe
+organise_menu =Menu(menubar, tearoff=False) 
+organise_menu.add_command(label='Select Folder', command=load_music) 
 menubar.add_cascade(label='Organise',menu=organise_menu)
 
-# ei dui line black box add korlo. ekhane song list create korlam
 songlist = Listbox(root, bg="black", fg="white", width=100, height=15)
 songlist.pack()
 
